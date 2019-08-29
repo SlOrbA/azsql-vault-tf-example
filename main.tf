@@ -1,6 +1,11 @@
 provider "azurerm" {}
 
-provider "vault" {}
+provider "vault" {
+  address = "https://${azurerm_app_service.vault-app.default_site_hostname}"
+  token   = "${random_uuid.root-token.result}"
+}
+
+resource "random_uuid" "root-token" {}
 
 resource "vault_mount" "db" {
   path = "azsql"
@@ -13,7 +18,7 @@ resource "vault_database_secret_backend_connection" "azsql" {
   allowed_roles = ["dev","prod"]
 
   mssql {
-    connection_url = "jdbc:sqlserver://${azurerm_sql_server.dbserver.fully_qualified_domain_name};databaseName=${azurerm_sql_database.sqldb.name};user=${azurerm_sql_server.dbserver.administrator_login};password=${azurerm_sql_server.dbserver.administrator_login_password};encrypt=true;hostNameInCertificate=*.int.mscds.com;"
+    connection_url = "user id=${azurerm_sql_server.dbserver.administrator_login};password=${azurerm_sql_server.dbserver.administrator_login_password};server=${azurerm_sql_server.dbserver.fully_qualified_domain_name};database=${azurerm_sql_database.sqldb.name};app name=vault;port=1433"
   }
 }
 
@@ -25,12 +30,12 @@ resource "vault_database_secret_backend_role" "role"{
 }
 
 resource "azurerm_resource_group" "rg" {
-  name     = "example"
+  name     = "vault-example"
   location = "westeurope"
 }
 
 resource "azurerm_sql_server" "dbserver" {
-  name                         = "example-db-server"
+  name                         = "db-srv-vault-${random_string.app-name.result}-example"
   resource_group_name          = "${azurerm_resource_group.rg.name}"
   location                     = "${azurerm_resource_group.rg.location}"
   version                      = "12.0"
@@ -46,25 +51,26 @@ resource "random_string" "admin-username" {
 }
 
 resource "random_string" "admin-password" {
-  length           = "8"
+  length           = "16"
   upper            = true
   lower            = true
-  special          = true
-  override_special = "-_=+<>"
+  special          = false 
 }
 
 resource "azurerm_sql_database" "sqldb" {
-  name                = "example-db"
+  name                = "db-example"
   resource_group_name = "${azurerm_resource_group.rg.name}"
   location            = "${azurerm_resource_group.rg.location}"
   server_name         = "${azurerm_sql_server.dbserver.name}"
 }
 
 resource "azurerm_app_service_plan" "vault-plan" {
-  name                = "example-plan"
+  name                = "vault-plan-example"
   resource_group_name = "${azurerm_resource_group.rg.name}"
   location            = "${azurerm_resource_group.rg.location}"
-  
+  kind                = "Linux"
+  reserved            = true
+
   sku {
     tier = "Standard"
     size = "S1"
@@ -72,7 +78,7 @@ resource "azurerm_app_service_plan" "vault-plan" {
 }
 
 resource "azurerm_app_service" "vault-app" {
-  name                = "example-app"
+  name                = "vault-app-${random_string.app-name.result}-example"
   resource_group_name = "${azurerm_resource_group.rg.name}"
   location            = "${azurerm_resource_group.rg.location}"
   app_service_plan_id = "${azurerm_app_service_plan.vault-plan.id}"
@@ -82,6 +88,16 @@ resource "azurerm_app_service" "vault-app" {
   }
 
   app_settings = {
-    VAULT_DEV_ROOT_TOKEN_ID  = "myroot"
+    VAULT_DEV_ROOT_TOKEN_ID             = "${random_uuid.root-token.result}"
+    VAULT_LOCAL_CONFIG                  = "{ \"ui\":  \"true\"}"
+    SKIP_SETCAP                         = "yep"
+    WEBSITES_ENABLE_APP_SERVICE_STORAGE = "false"
   }
+}
+
+resource "random_string" "app-name" {
+  length  = "3"
+  upper   = false
+  lower   = true
+  special = false
 }
