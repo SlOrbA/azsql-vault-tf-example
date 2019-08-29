@@ -23,10 +23,13 @@ resource "vault_database_secret_backend_connection" "azsql" {
 }
 
 resource "vault_database_secret_backend_role" "role"{
-  backend             = "${vault_mount.db.path}"
-  name                = "my-role"
-  db_name             = "${vault_database_secret_backend_connection.azsql.name}"
-  creation_statements = ["CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{passwd}}' VALID UNTIL '{{expiration}}';"]
+  backend               = "${vault_mount.db.path}"
+  name                  = "dev"
+  db_name               = "${vault_database_secret_backend_connection.azsql.name}"
+  creation_statements   = ["CREATE USER [{{name}}] WITh PASSWORD = '{{password}}';"]
+  revocation_statements = ["DROP USER IF EXISTS [{{name}}]"]
+  default_ttl           = "300"
+  max_ttl               = "86400"
 }
 
 resource "azurerm_resource_group" "rg" {
