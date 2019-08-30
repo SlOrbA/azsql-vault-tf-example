@@ -13,6 +13,7 @@ You need to be logged in with the Azure CLI and the subscription you want to dep
 1. `cd azsql-vault-tf-example`
 1. `terraform init`
 1. `terraform plan --target azurerm_app_service.vault-app`
+1. review the changes terraform is proposing
 1. `terraform apply --target azurerm_app_service.vault-app`
 1. `terraform plan`
 1. review the changes terraform is proposing
