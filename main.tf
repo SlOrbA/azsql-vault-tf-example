@@ -67,6 +67,14 @@ resource "azurerm_sql_database" "sqldb" {
   server_name         = "${azurerm_sql_server.dbserver.name}"
 }
 
+resource "azurerm_sql_firewall_rule" "vault" {
+  name                = "vault-access"
+  resource_group_name = "${azurerm_resource_group.rg.name}"
+  server_name         = "${azurerm_sql_server.dbserver.name}"
+  start_ip_address    = "0.0.0.0"
+  end_ip_address      = "0.0.0.0"
+}
+
 resource "azurerm_app_service_plan" "vault-plan" {
   name                = "vault-plan-example"
   resource_group_name = "${azurerm_resource_group.rg.name}"
@@ -104,3 +112,4 @@ resource "random_string" "app-name" {
   lower   = true
   special = false
 }
+
