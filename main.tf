@@ -43,7 +43,7 @@ resource "azurerm_sql_server" "dbserver" {
   location                     = "${azurerm_resource_group.rg.location}"
   version                      = "12.0"
   administrator_login          = "${random_string.admin-username.result}"
-  administrator_login_password = "${random_string.admin-password.result}"
+  administrator_login_password = "${random_password.admin-password.result}"
 }
 
 resource "random_string" "admin-username" {
@@ -53,7 +53,7 @@ resource "random_string" "admin-username" {
   special          = false
 }
 
-resource "random_string" "admin-password" {
+resource "random_password" "admin-password" {
   length           = "16"
   upper            = true
   lower            = true
