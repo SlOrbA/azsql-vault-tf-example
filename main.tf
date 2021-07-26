@@ -17,14 +17,14 @@ resource "vault_mount" "db" {
 resource "vault_database_secret_backend_connection" "azsql" {
   backend       = vault_mount.db.path
   name          = "example"
-  allowed_roles = ["dev","prod"]
+  allowed_roles = ["dev", "prod"]
 
   mssql {
     connection_url = "user id=${azurerm_sql_server.dbserver.administrator_login};password=${azurerm_sql_server.dbserver.administrator_login_password};server=${azurerm_sql_server.dbserver.fully_qualified_domain_name};database=${azurerm_sql_database.sqldb.name};app name=vault;port=1433"
   }
 }
 
-resource "vault_database_secret_backend_role" "role"{
+resource "vault_database_secret_backend_role" "role" {
   backend               = vault_mount.db.path
   name                  = "dev"
   db_name               = vault_database_secret_backend_connection.azsql.name
@@ -49,17 +49,17 @@ resource "azurerm_sql_server" "dbserver" {
 }
 
 resource "random_string" "admin-username" {
-  length           = "8"
-  upper            = false
-  lower            = true
-  special          = false
+  length  = "8"
+  upper   = false
+  lower   = true
+  special = false
 }
 
 resource "random_password" "admin-password" {
-  length           = "16"
-  upper            = true
-  lower            = true
-  special          = false 
+  length  = "16"
+  upper   = true
+  lower   = true
+  special = false
 }
 
 resource "azurerm_sql_database" "sqldb" {
