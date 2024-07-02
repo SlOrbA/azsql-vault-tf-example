@@ -20,7 +20,7 @@ resource "vault_database_secret_backend_connection" "azsql" {
   allowed_roles = ["dev", "prod"]
 
   mssql {
-    connection_url = "user id=${azurerm_sql_server.dbserver.administrator_login};password=${azurerm_sql_server.dbserver.administrator_login_password};server=${azurerm_sql_server.dbserver.fully_qualified_domain_name};database=${azurerm_sql_database.sqldb.name};app name=vault;port=1433"
+    connection_url = "user id=${azurerm_mssql_server.dbserver.administrator_login};password=${azurerm_mssql_server.dbserver.administrator_login_password};server=${azurerm_mssql_server.dbserver.fully_qualified_domain_name};database=${azurerm_mssql_database.sqldb.name};app name=vault;port=1433"
   }
 }
 
@@ -39,7 +39,7 @@ resource "azurerm_resource_group" "rg" {
   location = "westeurope"
 }
 
-resource "azurerm_sql_server" "dbserver" {
+resource "azurerm_mssql_server" "dbserver" {
   name                         = "db-srv-vault-${random_string.app-name.result}-example"
   resource_group_name          = azurerm_resource_group.rg.name
   location                     = azurerm_resource_group.rg.location
@@ -62,22 +62,22 @@ resource "random_password" "admin-password" {
   special = false
 }
 
-resource "azurerm_sql_database" "sqldb" {
+resource "azurerm_mssql_database" "sqldb" {
   name                = "db-example"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
-  server_name         = azurerm_sql_server.dbserver.name
+  server_name         = azurerm_mssql_server.dbserver.name
 }
 
-resource "azurerm_sql_firewall_rule" "vault" {
+resource "azurerm_mssql_firewall_rule" "vault" {
   name                = "vault-access"
   resource_group_name = azurerm_resource_group.rg.name
-  server_name         = azurerm_sql_server.dbserver.name
+  server_name         = azurerm_mssql_server.dbserver.name
   start_ip_address    = "0.0.0.0"
   end_ip_address      = "0.0.0.0"
 }
 
-resource "azurerm_app_service_plan" "vault-plan" {
+resource "azurerm_service_plan" "vault-plan" {
   name                = "vault-plan-example"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
@@ -94,7 +94,7 @@ resource "azurerm_app_service" "vault-app" {
   name                = "vault-app-${random_string.app-name.result}-example"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
-  app_service_plan_id = azurerm_app_service_plan.vault-plan.id
+  app_service_plan_id = azurerm_service_plan.vault-plan.id
 
   site_config {
     linux_fx_version = "DOCKER|vault"
