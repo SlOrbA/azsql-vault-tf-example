@@ -3,7 +3,7 @@ provider "azurerm" {
 }
 
 provider "vault" {
-  address = "https://${azurerm_app_service.vault-app.default_site_hostname}"
+  address = "https://${azurerm_linux_web_app.vault-app.default_hostname}"
   token   = random_uuid.root-token.result
 }
 
@@ -61,50 +61,57 @@ resource "random_password" "admin-password" {
   lower   = true
   special = false
 }
+# Corrected Terraform configuration for azurerm_mssql_database, azurerm_mssql_firewall_rule, and azurerm_service_plan resources
+
+# Assuming the existence of a resource "azurerm_mssql_server" "dbserver" and "azurerm_resource_group" "rg" not shown in the provided excerpt
 
 resource "azurerm_mssql_database" "sqldb" {
-  name                = "db-example"
-  resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location
-  server_name         = azurerm_mssql_server.dbserver.name
+  name                = "example-database"
+  server_id           = azurerm_mssql_server.dbserver.id
 }
 
 resource "azurerm_mssql_firewall_rule" "vault" {
-  name                = "vault-access"
-  resource_group_name = azurerm_resource_group.rg.name
-  server_name         = azurerm_mssql_server.dbserver.name
-  start_ip_address    = "0.0.0.0"
-  end_ip_address      = "0.0.0.0"
+  server_id        = azurerm_mssql_server.dbserver.id
+  start_ip_address = "0.0.0.0"
+  end_ip_address   = "255.255.255.255"
+  name             = "example-firewall-rule"
 }
 
 resource "azurerm_service_plan" "vault-plan" {
-  name                = "vault-plan-example"
+  name                = "example-service-plan"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
-  kind                = "Linux"
-  reserved            = true
-
-  sku {
-    tier = "Standard"
-    size = "S1"
+  sku_name            = "S1" # Assuming a SKU name, adjust as necessary
+  os_type             = "Linux" # Assuming OS type, adjust as necessary
   }
-}
 
-resource "azurerm_app_service" "vault-app" {
-  name                = "vault-app-${random_string.app-name.result}-example"
+resource "azurerm_linux_web_app" "vault-app" {
+  name                = "vault-app-example"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
-  app_service_plan_id = azurerm_service_plan.vault-plan.id
+  service_plan_id     = azurerm_service_plan.vault-plan.id
 
-  site_config {
-    linux_fx_version = "DOCKER|vault"
+  ftp_publish_basic_authentication_enabled       = false
+  https_only                                     = true
+  webdeploy_publish_basic_authentication_enabled = false
+
+  site_config { 
+    ftps_state = "FtpsOnly"
+    ip_restriction_default_action = "Allow"
+    scm_ip_restriction_default_action = "Allow"
+
+    application_stack {
+      docker_image_name = "hashicorp/vault:latest"
+    }
   }
 
   app_settings = {
-    VAULT_DEV_ROOT_TOKEN_ID             = random_uuid.root-token.result
-    VAULT_LOCAL_CONFIG                  = "{ \"ui\":  \"true\"}"
-    SKIP_SETCAP                         = "yep"
-    WEBSITES_ENABLE_APP_SERVICE_STORAGE = "false"
+    "WEBSITES_PORT"                       = "8200"
+    #"VAULT_DEV_LISTEN_ADDRESS"            = "0.0.0.0:80"
+    "VAULT_DEV_ROOT_TOKEN_ID"             = random_uuid.root-token.result
+    "VAULT_LOCAL_CONFIG"                  = "{ \"ui\":  \"true\"}"
+    "SKIP_SETCAP"                         = "yep"
+    "WEBSITES_ENABLE_APP_SERVICE_STORAGE" = "false"
   }
 }
 
