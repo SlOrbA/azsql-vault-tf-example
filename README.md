@@ -2,8 +2,10 @@
 Azure SQL managed by Vault with Terraform
 
 ### Required software
-* Terraform (verified with 0.12.6 ARM)
-* Vault (verified with 1.2.2 ARM)
+* Terraform (verified with 1.9.3 AMD64
+  https://terraform.io
+* Vault (verified with 1.17.3 AMD64)
+  https://vaultproject.io
 
 #### Azure CLI
 You need to be logged in with the Azure CLI and the subscription you want to deploy to needs to be set as the default.
@@ -12,7 +14,7 @@ You need to be logged in with the Azure CLI and the subscription you want to dep
 1. `git clone https://github.com/SlOrbA/azsql-vault-tf-example`
 1. `cd azsql-vault-tf-example`
 1. `terraform init`
-1. `terraform apply --target azurerm_app_service.vault-app`
+1. `terraform apply --target azurerm_app_service.vault-app` [Not needed anymore]
 1. `export VAULT_ADDR=<url>`
 1. `export VAULT_TOKEN=<token>`
 1. `terraform apply`
